@@ -28,6 +28,7 @@ struct DashboardView: View {
                         Label(group.title, systemImage: group.symbolName)
                     }
                 }
+                .onDelete(perform: deleteGroup)
             }
             .navigationTitle(profile.name)
             .listStyle(.sidebar)
@@ -99,5 +100,9 @@ struct DashboardView: View {
         } message: {
             Text("Free users can create up to 4 groups. Upgrade to Premium to create unlimited groups.")
         }
+    }
+    
+    func deleteGroup(at offsets: IndexSet) {
+        profile.groups.remove(atOffsets: offsets)
     }
 }

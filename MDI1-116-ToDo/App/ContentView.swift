@@ -12,6 +12,9 @@ struct ContentView: View {
     @State private var taskGroups: [TaskGroup] = []
     @State private var profiles: [Profile] = []
     @State private var path = NavigationPath()
+    @State private var isShowingAddProfile = false
+    @State private var isShowingSettings = false
+    @State private var showPremiumAlert = false
     @Environment(\.scenePhase) private var scenePhase
     
     let saveKey = "savedProfiles"
@@ -33,8 +36,16 @@ struct ContentView: View {
                                         .scaledToFit()
                                         .frame(width: 150, height: 150)
                                         .clipShape(.circle)
+
                                     Text(profile.name)
                                         .font(.title2.bold())
+                                }
+                            }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    deleteProfile(profile)
+                                } label: {
+                                    Label("Delete Profile", systemImage: "trash")
                                 }
                             }
                             .accessibilityIdentifier("profileCard_\(profile.name)")
@@ -42,13 +53,34 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Home")
-            .navigationBarHidden(true)
+            .navigationTitle("ToDo App")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Profile.self) { selectedProfile in
                 if let index = profiles.firstIndex(where: { $0.id == selectedProfile.id }) {
                     DashboardView(profile: $profiles[index])
                         .navigationBarBackButtonHidden(true)
                 }
+            }
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        if profiles.count >= 3 {
+                            showPremiumAlert = true
+                        } else {
+                            isShowingAddProfile = true
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus")
+                            Text("Add New Profile")
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingAddProfile) {
+            NewProfileView { newProfile in
+                profiles.append(newProfile)
             }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
@@ -64,6 +96,17 @@ struct ContentView: View {
                 print("App is in background mode")
                 saveData()
             }
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView()
+        }
+        .alert("Premium Required", isPresented: $showPremiumAlert) {
+            Button("Upgrade to Premium") {
+                isShowingSettings = true
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Free users can create up to 2 profiles. Upgrade to Premium to create unlimited profiles.")
         }
     }
     
@@ -81,6 +124,11 @@ struct ContentView: View {
             }
         }
         // Show mock data for dev purposes
-        profiles = Profile.sample
+//        profiles = Profile.sample
+    }
+    
+    func deleteProfile(_ profile: Profile) {
+        profiles.removeAll { $0.id == profile.id }
+        saveData()
     }
 }
